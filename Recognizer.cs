@@ -1,52 +1,99 @@
-﻿using Windows.Storage;
-using Windows.Storage.Streams;
-using System.Threading.Tasks;
-using Windows.Foundation;
-using Windows.Media;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Newtonsoft.Json;
 using SimpleEngine;
+using TensorFlow;
 
-#if USE_WINML_NUGET
-using Microsoft.AI.MachineLearning;
-#else
-using Windows.AI.MachineLearning;
-#endif
 
 namespace PaintAI
 {
     internal class Recognizer
     {
-        private mnistModel modelGen;
-        private mnistInput mnistInput = new mnistInput();
-        private mnistOutput mnistOutput;
-        private Helper helper = new Helper();
-        public async Task LoadModelAsync()
+        private TFGraph graph;
+        private TFSession session;
+
+        private Label[] outputLabels;
+        private PictureBoxRenderer boxRenderer;
+        private Task<int[]> thread;
+
+        private bool loaded;
+        private bool recognizing;
+
+        public Recognizer(PictureBoxRenderer boxRenderer, Label[] outputLabels)
         {
-            //Load a machine learning model
-            StorageFile modelFile = await StorageFile.GetFileFromApplicationUriAsync(new Uri($"ms-appx:///mnist.onnx"));
-            modelGen = await mnistModel.CreateFromStreamAsync(modelFile as IRandomAccessStreamReference);
+            this.outputLabels = outputLabels;
+            this.boxRenderer = boxRenderer;
+            LoadModel();
         }
 
-        public async void recognizeImage(PictureBoxRenderer boxRenderer, Label outputLabel)
+        ~Recognizer()
         {
-            //Bind model input with contents from InkCanvas
-            VideoFrame vf = await helper.GetHandWrittenImage(boxRenderer);
-            mnistInput.Input3 = ImageFeatureValue.CreateFromVideoFrame(vf);
+            Dispose();
+        }
+        public void Dispose()
+        {
+            session.Dispose();
+            graph.Dispose();
+        }
+        private void LoadModel()
+        {
+            if (loaded)
+            {
+                return;
+            }
+            // Load model
+            loaded = true;
+            byte[] buffer = File.ReadAllBytes("C:\\Users\\super\\Desktop\\Code\\C# Projects\\SimpleGFX\\PaintAI\\Mnist_model_98.5success.pb");
+            graph = new TFGraph();
+            graph.Import(buffer);
+            session = new TFSession(graph);
+            
+            outputLabels[0].Text = "Model loaded";
+        }
 
-            //Evaluate the model
-            mnistOutput = await modelGen.EvaluateAsync(mnistInput);
+        private int[] RecognizeImage()
+        {
+            var runner = session.GetRunner();
+            var bitmap = boxRenderer.GetBitmap().ToTensorFormat();
+            var tensor = Utils.BitmapToTensorGrayScale(bitmap);
 
-            //Convert output to datatype
-            IReadOnlyList<float> vectorImage = mnistOutput.Plus214_Output_0.GetAsVectorView();
-            IList<float> imageList = vectorImage.ToList();
+            runner.AddInput(graph["conv1_input"][0], tensor);
+            runner.Fetch(graph["activation_4/Softmax"][0]);
 
-            //LINQ query to check for highest probability digit
-            var maxIndex = imageList.IndexOf(imageList.Max());
+            var output = runner.Run();
+            var vecResults = output[0].GetValue();
+            float[,] results = (float[,])vecResults;
 
-            //Display the results
-            outputLabel.Text = maxIndex.ToString();
+            // Evaluate the results
+            // int max_result = Utils.GetIntegerFromQuantized(quantized);
+            int[] int_results = Utils.GetSortedResults(results);
+
+            tensor.Dispose();
+            bitmap.Dispose();
+
+            return int_results;
+        }
+
+        public void RecognizeImageAsync()
+        {
+            if (thread != null)
+            {
+                if (!thread.IsCompleted)
+                {
+                    return;
+                }
+                DisplayResults(thread.Result);
+            }
+            thread = new Task<int[]>(RecognizeImage);
+            thread.Start();
+        }
+
+        public void DisplayResults(int[] results)
+        {
+            int minIndex = Math.Min(results.Length, outputLabels.Length);
+            for (int i = 0; i < minIndex; i++)
+            {
+                string result = results[i].ToString();
+                outputLabels[i].Text = result;
+            }
         }
     }
 }
