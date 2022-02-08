@@ -59,6 +59,7 @@
             this.brush_label = new System.Windows.Forms.Label();
             this.color_button = new System.Windows.Forms.Button();
             this.color_dialog = new System.Windows.Forms.ColorDialog();
+            this.recognize_button = new System.Windows.Forms.Button();
             label1 = new System.Windows.Forms.Label();
             label3 = new System.Windows.Forms.Label();
             label5 = new System.Windows.Forms.Label();
@@ -487,11 +488,22 @@
             this.color_dialog.Color = System.Drawing.Color.Red;
             this.color_dialog.SolidColorOnly = true;
             // 
+            // recognize_button
+            // 
+            this.recognize_button.Location = new System.Drawing.Point(869, 709);
+            this.recognize_button.Name = "recognize_button";
+            this.recognize_button.Size = new System.Drawing.Size(75, 23);
+            this.recognize_button.TabIndex = 4;
+            this.recognize_button.Text = "Recognize";
+            this.recognize_button.UseVisualStyleBackColor = true;
+            this.recognize_button.Click += new System.EventHandler(this.recognize_button_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1036, 761);
+            this.Controls.Add(this.recognize_button);
             this.Controls.Add(this.color_button);
             this.Controls.Add(this.brush_label);
             this.Controls.Add(this.predictions_panel);
@@ -579,5 +591,6 @@
         private Label brush_label;
         private Button color_button;
         private ColorDialog color_dialog;
+        private Button recognize_button;
     }
 }

@@ -6,19 +6,17 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>True</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-	<TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
-	<TargetPlatformVersion>10.0.20348.0</TargetPlatformVersion>
-	<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-	
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="mnist.onnx" />
+    <Compile Remove="python\**" />
+    <EmbeddedResource Remove="python\**" />
+    <None Remove="python\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AI.MachineLearning" Version="1.10.0" />
-    <!-- <PackageReference Include="TensorFlowSharp" Version="1.15.1" /> -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="TensorFlowSharp" Version="1.15.1" />
   </ItemGroup>
 
   <ItemGroup>
